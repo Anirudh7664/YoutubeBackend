@@ -2,15 +2,19 @@ import mongoose from "mongoose";
 import express from 'express'
 import { DB_NAME } from "./constants.js";
 import dotenv from 'dotenv'
-const URL = "mongodb+srv://randevanirudh:AnirudhMongo@cluster0.dif22ba.mongodb.net/youtuebackend?retryWrites=true&w=majority&appName=Cluster0";
-const app = express();
 dotenv.config();
 import connectDB from "./db/index.js";
 
 
 
 
-connectDB();
+connectDB()
+.then(()=>{
+    console.log(`Server started at ${process.env.PORT}`)
+})
+.catch((err)=>{
+    console.log(`Error in starting Server: ${err}`)
+})
 
 // (async ()=>{
 //     try {
