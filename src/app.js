@@ -13,3 +13,15 @@ app.use(cors({
 
 app.use(express.json());
 app.use(urlencoded());
+
+
+//routes import
+import userRouter from "./routes/user.routes.js"
+
+
+//routes declare
+//userRouter will contain all the user realted routes and APP.js will act as main path 
+//to lead to all the different routes.
+
+app.use("/api/v1/users",userRouter)
+export {app}
