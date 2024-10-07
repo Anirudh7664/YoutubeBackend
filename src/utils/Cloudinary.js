@@ -17,7 +17,8 @@ const uploadImage = async(filePath)=>{
         console.log("File is Uploaded", response.url);
         return response;
     } catch (error) {
-        fs.unlinkSync(filePath)
+        fs.unlinkSync(filePath) //remove the locally saved file as operation got failed
+        return null
     }
 }
 

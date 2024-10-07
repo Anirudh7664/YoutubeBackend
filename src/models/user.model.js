@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema({
     },
     watchHistory:[
         {
-            type:Schema.Types.ObjectId,
+            type:mongoose.Schema.Types.ObjectId,
             ref:'Video'
         }
     ],
@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema({
 },{timestamps:true})
 
 userSchema.pre("save",async function(next){
-    this.password = bcrypt.hash(this.password, 10);
+    this.password = await bcrypt.hash(this.password, 10);
     next()
 })
 userSchema.methods.isPasswordCorrect = async function(password){
@@ -85,4 +85,6 @@ userSchema.methods.generateRefreshToken = function(){
     //sets the default access token lifespan to 30–90 minutes, and the default refresh token 
     //lifespan to 24 hours for single-page apps and 90 days for other scenarios. 
 }
-const User = new mongoose.model('User', userSchema)
+export const User = new mongoose.model('User', userSchema)
+
+//export default User;
