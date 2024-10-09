@@ -18,8 +18,10 @@ const registerUser = asyncHandler( async (req,res)=>{
     //if not create new user
     //check if created
     //remove encrypted password and refresh token from the response
+    //res.status(200).json({ "message": "hello" });
+
     const {fullName, email, username, password} = req.body;
-    console.log(email)
+    //console.log(email)
     if(
         [fullName,email,username,password].some((file)=>
             file?.trim() === "") //After trimming, this checks if the resulting string is 
@@ -29,7 +31,7 @@ const registerUser = asyncHandler( async (req,res)=>{
         throw new ApiError(400,"All feilds are required");
         //custom error that we created to return
     }
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or:[{ username },{ email }]
         //this checks if any of username or email is available in the database
     })
@@ -38,8 +40,13 @@ const registerUser = asyncHandler( async (req,res)=>{
     if(existedUser){
         throw new ApiError(409,"Username or Email already exists");
     }
+    //console.log(req.file)
+    //return;
     const avatarLocalPath = req.files?.avatar[0]?.path
+    
     const coverImagePath = req.files?.coverImage[0]?.path;
+    console.log(coverImagePath)
+    
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required");
