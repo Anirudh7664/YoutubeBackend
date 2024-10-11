@@ -62,7 +62,7 @@ userSchema.methods.generateAccessToken = function(){
         _id:this._id,
         email:this.email,
         username:this.username,
-        fullName:this.fullName
+        //fullName:this.fullName
 
     },process.env.ACCESS_TOKEN_SECRET,
     {
@@ -78,7 +78,7 @@ userSchema.methods.generateRefreshToken = function(){
 
     },process.env.REFRESH_TOKEN_SECRET,
     {
-        expiresIn:REFRESH_TOKEN_EXPIRY
+        expiresIn:process.env.REFRESH_TOKEN_EXPIRY
     });
     //Access tokens are usually short-lived, often lasting only a few hours, 
     //while refresh tokens are longer-lasting. For example, Microsoft's identity platform 

@@ -3,7 +3,21 @@ import {ApiError} from "../utils/ApiError.js"
 import { User } from "../models/user.model.js";
 import { uploadImage } from "../utils/Cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import bcrypt from "bcrypt"
+import { send } from "../MailSender/sendmail.js";
+
 //import {User} from "../models/user.models"
+
+const generateAccessandRefreshTokens = async (userId)=>{
+    const user = await User.findById(userId);
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+    user.refreshToken = refreshToken;  //store the users refresh token in the user object
+
+    await user.save({validateBeforeSave : false}) //save this object in the database
+
+    return {accessToken,refreshToken} //return accessToken and refreshToken
+}
 
 
 
@@ -44,8 +58,15 @@ const registerUser = asyncHandler( async (req,res)=>{
     //return;
     const avatarLocalPath = req.files?.avatar[0]?.path
     
-    const coverImagePath = req.files?.coverImage[0]?.path;
-    console.log(coverImagePath)
+    //const coverImagePath = req.files?.coverImage[0]?.path;
+    //console.log(coverImagePath)
+    let coverImagePath;
+    console.log(req.files)
+    if(req.files && Array.isArray(req.files.coverImage) 
+        && req.files.coverImage.length > 0 ){
+    coverImagePath = req.files?.coverImage[0].path
+        
+    }
     
 
     if (!avatarLocalPath) {
@@ -72,11 +93,86 @@ const registerUser = asyncHandler( async (req,res)=>{
     if(!createUser){
         throw new ApiError(500, "Something went wrong registering the user");
     }
+    send(email);
     return res.status(201).json(
         new ApiResponse(200,createUser,"User registered Successfully")
     )
 
 })
 
+const loginUser = asyncHandler(async (req,res)=>{
+    //take username and email from body
+    //check if username and email exists
+    //if yes compare the passwords, if yes login the user and give him an acess and refresh token 
+    //store the token in local storage and send the user info
+    //
+    const {username,email,password} = req.body
+    // console.log(username)
+    // console.log(email)
+    // console.log(password)
+    if(!username || !email){
+        throw new ApiError(400,"Username and Email are required")
+    }
+    //check if user exists
+    const user = await User.findOne({
+        $or: [{username:username.toLowerCase()}, {email:email.toLowerCase()}],
+    })
+    if(!user){
+        throw new ApiError(400,"User not Found")
+    }
+    
+    //compare the password
+    const check =  bcrypt.compare(password,user.password);
+    if(!check){
+        throw new ApiError(400,"Invalid Password")
+    }
+    
+    const {accessToken,refreshToken} = await generateAccessandRefreshTokens(user._id)
 
-export {registerUser}
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+
+    //set the cookies
+    const options = {
+        httpOnly: true, //ensures the cookie is inaccessible to frontend
+        secure:true //ensures the cookie is only sent over secure, encrypted HTTPS connections,
+    }
+
+    return res.status(200)
+    .cookie("accessToken",accessToken, options)
+    .cookie("refreshToken",refreshToken, options)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                user:loggedInUser,
+                accessToken,
+                refreshToken
+            },
+            "User logged in successfully"
+        )
+    )
+})
+
+const logoutUser = asyncHandler(async (req,res)=>{
+    User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{
+                refreshToken:undefined
+            }
+        }
+
+
+    )
+    const options= {
+        httpOnly:true,
+        secure:true
+    }
+
+    return res.status(200)
+    .clearCookie("accessToken")
+    .clearCookie("refreshToken")
+    .json(new ApiResponse(200,{},"User Logged Out"))
+})
+
+export {registerUser,loginUser,logoutUser}
